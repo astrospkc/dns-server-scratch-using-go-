@@ -1,4 +1,4 @@
-package internal
+package dns
 
 import (
 	"encoding/binary"
@@ -38,7 +38,7 @@ func ParseDNSHeader(msg []byte)(*DNSHeader, error){
 	return h, nil
 }
 
-func BuildDNSServer(h *DNSHeader) []byte{
+func BuildDNSHeader(h *DNSHeader) []byte{
 	buf := make([]byte, 12)
 	binary.BigEndian.PutUint16(buf[0:2], h.ID)
 	binary.BigEndian.PutUint16(buf[2:4], h.Flags)
@@ -138,3 +138,6 @@ func BuildARecord(nameOffset uint16, ipAddr string, ttl uint32) []byte{
 	return answer
 
 }
+
+
+
