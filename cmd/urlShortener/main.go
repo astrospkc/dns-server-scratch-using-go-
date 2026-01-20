@@ -1,7 +1,7 @@
 package main
 
 import (
-	"dnsServer/cmd/urlShortener/store"
+	"dnsServer/cmd/urlShortener/stores"
 	"fmt"
 	"net/http"
 )
@@ -13,7 +13,7 @@ import (
 
 func main(){
 	fmt.Print("this is url shortener worker")
-	http.HandleFunc("/", store.Redirect)
-	http.HandleFunc("/add", store.Add)
+	http.HandleFunc("/", stores.Redirect)
+	http.HandleFunc("/add", stores.Add)
 	http.ListenAndServe(":8080", nil)
 }

@@ -1,4 +1,4 @@
-package store
+package stores
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ func Add( w http.ResponseWriter,r *http.Request){
 		fmt.Fprint(w,AddForm)
 		return
 	}
-	key:=store.Put(url)
+	key:=urlStore.Put(url)
 	fmt.Print("key: ", key)
 	fmt.Fprintf(w , "%s",key)
 }
@@ -35,7 +35,7 @@ URL:<input type="text" name="url">
 func Redirect(w http.ResponseWriter, r *http.Request){
 	 
 	key:= r.URL.Path[1:]
-	url := store.Get(key)
+	url := urlStore.Get(key)
 	if url==""{
 		http.NotFound(w, r)
 		return

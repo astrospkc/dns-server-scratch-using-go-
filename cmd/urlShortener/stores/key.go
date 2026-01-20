@@ -1,4 +1,4 @@
-package store
+package stores
 
 var keyChar =[]byte("0123456789abscdefghijklmnopqrstuvwABCDEFGHIJKLMNOPQRSTUVWXYZ")
 

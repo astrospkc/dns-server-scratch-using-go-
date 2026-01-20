@@ -1,7 +1,8 @@
-package store
+package stores
 
 import (
 	"encoding/gob"
+	"io"
 	"log"
 	"os"
 	"sync"
@@ -20,10 +21,31 @@ type Record struct{
 
 var urlStore = NewUrlStore("store.gob")
 
-// save the key and url in file
+// a new save method that writes a given key and URL to disk as a gob-encoded record:
 func (s *UrlStore) save(key, url string ) error{
 	e := gob.NewEncoder(s.file)
 	return e.Encode(Record{key, url})
+}
+
+
+// load the data stored in the disk and read in map
+func (s *UrlStore) load() error{
+	if _, err:=s.file.Seek(0,0);err!=nil{
+		return err
+	}
+	d := gob.NewDecoder(s.file)
+	var err error 
+	for err==nil{
+		
+		var r Record
+		if err = d.Decode(&r); err==nil{
+			s.Set(r.KEY,r.URL)
+		}
+	}
+	if err==io.EOF{
+		return nil
+	}
+	return err
 }
 
 func (s *UrlStore) Get(key string) string{
@@ -61,10 +83,13 @@ func NewUrlStore(filename string) *UrlStore{
 		log.Fatal("UrlStore: ", err)
 	}
 	s.file = f
+	if err:= s.load(); err!=nil{
+		log.Println("Error loading in dataStore", err)
+	}
 	return s
 }
 
-var store = NewUrlStore()
+
 
 
 // To add new short/loong url
@@ -92,9 +117,12 @@ func (s *UrlStore) Put(url string)string{
 	for{
 		key:=GenKey(s.Count())
 		if s.Set(key, url){
+			if err:=s.save(key, url); err!=nil{
+				log.Println("error saving to urlstore: ", err)
+			}
 			return key
 		}
 	}
-
-
+	
 }
+
