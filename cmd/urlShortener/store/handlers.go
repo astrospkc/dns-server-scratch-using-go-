@@ -10,11 +10,13 @@ import (
 func Add( w http.ResponseWriter,r *http.Request){
 	w.Header().Set("Content-Type", "text/html")
 	url:=r.FormValue("url")
+	// fmt.Print("url: ", url)
 	if url==""{
 		fmt.Fprint(w,AddForm)
 		return
 	}
 	key:=store.Put(url)
+	fmt.Print("key: ", key)
 	fmt.Fprintf(w , "%s",key)
 }
 

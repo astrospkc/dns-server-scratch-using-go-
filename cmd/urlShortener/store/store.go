@@ -10,7 +10,7 @@ type UrlStore struct{
 
 func (s *UrlStore) Get(key string) string{
 	s.mu.RLock()
-	defer s.mu.Unlock()
+	defer s.mu.RUnlock()
 	url:=s.urls[key]
 	return url
 }
