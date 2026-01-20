@@ -1,6 +1,8 @@
 package store
 
 import (
+	"encoding/gob"
+	"log"
 	"os"
 	"sync"
 )
@@ -11,6 +13,18 @@ type UrlStore struct{
 	mu sync.RWMutex
 	file *os.File
 } 
+
+type Record struct{
+	KEY, URL string
+}
+
+var urlStore = NewUrlStore("store.gob")
+
+// save the key and url in file
+func (s *UrlStore) save(key, url string ) error{
+	e := gob.NewEncoder(s.file)
+	return e.Encode(Record{key, url})
+}
 
 func (s *UrlStore) Get(key string) string{
 	s.mu.RLock()
@@ -35,8 +49,19 @@ func (s *UrlStore) Set(key, url string) bool{
 
 }
 
-func NewUrlStore() *UrlStore {
-	return &UrlStore{urls:make(map[string]string)}
+// func NewUrlStore() *UrlStore {
+// 	return &UrlStore{urls:make(map[string]string)}
+// }
+
+// Redefining the NewUrlStore to save urls in file
+func NewUrlStore(filename string) *UrlStore{
+	s := &UrlStore{urls:make(map[string]string)}
+	f, err := os.OpenFile(filename,os.O_RDWR|os.O_CREATE|os.O_APPEND,0644)
+	if err!=nil{
+		log.Fatal("UrlStore: ", err)
+	}
+	s.file = f
+	return s
 }
 
 var store = NewUrlStore()
