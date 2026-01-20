@@ -1,11 +1,15 @@
 package store
 
-import "sync"
+import (
+	"os"
+	"sync"
+)
 
 
 type UrlStore struct{
 	urls map[string]string
 	mu sync.RWMutex
+	file *os.File
 } 
 
 func (s *UrlStore) Get(key string) string{
