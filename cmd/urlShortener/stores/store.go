@@ -8,33 +8,39 @@ import (
 	"sync"
 )
 
-
+// Instead of saving records directly to disk, we send them to a channel, which is a kind of buffer, so the sending function doesn’t have to wait for it.
+const saveQueueLength = 1000
 type UrlStore struct{
 	urls map[string]string
 	mu sync.RWMutex
-	file *os.File
+	save chan Record
 } 
+
+var Urlstore *UrlStore
+
+// save := make(chan, saveQueueLength)
 
 type Record struct{
 	KEY, URL string
 }
 
-var urlStore = NewUrlStore("store.gob")
+
 
 // a new save method that writes a given key and URL to disk as a gob-encoded record:
-func (s *UrlStore) save(key, url string ) error{
-	e := gob.NewEncoder(s.file)
-	return e.Encode(Record{key, url})
-}
+
 
 
 // load the data stored in the disk and read in map
-func (s *UrlStore) load() error{
-	if _, err:=s.file.Seek(0,0);err!=nil{
+func (s *UrlStore) load(filename string) error{
+	f, err:=os.Open(filename)
+	if err!=nil{
+		log.Println("Error opening file: ", err)
 		return err
 	}
-	d := gob.NewDecoder(s.file)
-	var err error 
+	defer f.Close()
+
+	d := gob.NewDecoder(f)
+	
 	for err==nil{
 		
 		var r Record
@@ -77,16 +83,36 @@ func (s *UrlStore) Set(key, url string) bool{
 
 // Redefining the NewUrlStore to save urls in file
 func NewUrlStore(filename string) *UrlStore{
-	s := &UrlStore{urls:make(map[string]string)}
-	f, err := os.OpenFile(filename,os.O_RDWR|os.O_CREATE|os.O_APPEND,0644)
+	
+	// replacing this unnecessary file opening with go saveLoop
+	// f, err := os.OpenFile(filename,os.O_RDWR|os.O_CREATE|os.O_APPEND,0644)
+	s:=&UrlStore{
+	urls:make(map[string]string),
+	save:make(chan Record, saveQueueLength),
+	}
+	
+	if err:=s.load(filename); err!=nil{
+		log.Println("Error loading urlstore: ", err)
+	}
+	go s.SaveLoop(filename)
+	return s
+}
+
+// Records are read from the save channel in an infinite loop and encoded to the file.
+
+func (s *UrlStore) SaveLoop(filename string){
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err!=nil{
 		log.Fatal("UrlStore: ", err)
 	}
-	s.file = f
-	if err:= s.load(); err!=nil{
-		log.Println("Error loading in dataStore", err)
+	defer f.Close()
+	e:=gob.NewEncoder(f)
+	for{
+		r:=<-s.save // taking a arecord from the channel and encoding it
+		if err:=e.Encode(r); err!=nil{
+			log.Println("UrlStore", err)
+		}
 	}
-	return s
 }
 
 
@@ -117,9 +143,7 @@ func (s *UrlStore) Put(url string)string{
 	for{
 		key:=GenKey(s.Count())
 		if s.Set(key, url){
-			if err:=s.save(key, url); err!=nil{
-				log.Println("error saving to urlstore: ", err)
-			}
+			s.save<-Record{key, url}
 			return key
 		}
 	}

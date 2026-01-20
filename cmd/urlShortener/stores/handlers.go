@@ -15,7 +15,7 @@ func Add( w http.ResponseWriter,r *http.Request){
 		fmt.Fprint(w,AddForm)
 		return
 	}
-	key:=urlStore.Put(url)
+	key:=Urlstore.Put(url)
 	fmt.Print("key: ", key)
 	fmt.Fprintf(w , "%s",key)
 }
@@ -35,7 +35,7 @@ URL:<input type="text" name="url">
 func Redirect(w http.ResponseWriter, r *http.Request){
 	 
 	key:= r.URL.Path[1:]
-	url := urlStore.Get(key)
+	url := Urlstore.Get(key)
 	if url==""{
 		http.NotFound(w, r)
 		return
